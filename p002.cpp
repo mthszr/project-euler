@@ -1,4 +1,5 @@
 #include <iostream>
+using namespace std;
 
 int main() {
     // Initialize the first two terms of the Fibonacci sequence
@@ -19,7 +20,7 @@ int main() {
     }
 
     // Output the result
-    std::cout << "The sum of the even-valued Fibonacci terms below 4 million is: " << sum << std::endl;
+    cout << "The sum of the even-valued Fibonacci terms below 4 million is: " << sum << endl;
 
     return 0;
 }
