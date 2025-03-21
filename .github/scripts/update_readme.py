@@ -5,10 +5,21 @@ def count_solutions():
     """Count the number of solution files in the repository."""
     count = 0
     
-    # Define directories and file extensions to look for
-    solution_dirs = ["level 1", "level 2", "level 3", "bonus"]
-    extensions = [".cpp", ".py", ".java", ".js"]
+    # Define file extensions to look for
+    extensions = [".cpp", ".py", ".java", ".js", ".c", ".go"]
     
+    # Find all directories in the root
+    all_dirs = [d for d in os.listdir() if os.path.isdir(d)]
+    
+    # Filter for level directories and the bonus directory
+    solution_dirs = []
+    level_pattern = re.compile(r"level\s*\d+", re.IGNORECASE)
+    
+    for directory in all_dirs:
+        if level_pattern.match(directory) or directory.lower() == "bonus":
+            solution_dirs.append(directory)
+    
+    # Count files with matching extensions in each directory
     for directory in solution_dirs:
         if os.path.exists(directory):
             for filename in os.listdir(directory):
