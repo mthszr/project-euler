@@ -1,5 +1,7 @@
 import os
 import re
+import requests
+import json
 
 def count_solutions():
     """Count the number of solution files in the repository."""
@@ -116,6 +118,74 @@ def extract_description(file_path):
         default_desc = "Problem " + os.path.basename(file_path).replace('.cpp', '').replace('p', '')
         return default_desc[0].upper() + default_desc[1:] if default_desc else default_desc
 
+# Add this new function for AI-enhanced descriptions
+def enhance_description_with_ai(file_path, basic_description):
+    """Use OpenAI API to generate a more precise description based on code analysis."""
+    try:
+        # Read the file content
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+            code_content = file.read()
+        
+        # Prepare the API request
+        api_key = os.getenv('OPENAI_API_KEY')  # Set this in your environment variables or GitHub secrets
+        if not api_key:
+            return basic_description
+            
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        }
+        
+        # Craft the prompt
+        prompt = f"""
+        This is a Project Euler solution code:
+        
+        ```
+        {code_content[:1000]}  # Limiting to first 1000 chars to avoid token limits
+        ```
+        
+        The current extracted description is: "{basic_description}"
+        
+        Please provide a clear, concise one-sentence description of the mathematical problem being solved.
+        Start with a capital letter and don't include phrases like "This problem asks" or "In this problem".
+        Just state what needs to be calculated/found directly.
+        """
+        
+        data = {
+            'model': 'gpt-3.5-turbo',
+            'messages': [
+                {'role': 'system', 'content': 'You are a helpful assistant that generates concise descriptions of Project Euler problems.'},
+                {'role': 'user', 'content': prompt}
+            ],
+            'max_tokens': 100,
+            'temperature': 0.3
+        }
+        
+        # Make the API call
+        response = requests.post('https://api.openai.com/v1/chat/completions', 
+                                headers=headers, 
+                                data=json.dumps(data),
+                                timeout=10)
+        
+        if response.status_code == 200:
+            result = response.json()
+            enhanced_description = result['choices'][0]['message']['content'].strip()
+            
+            # Remove quotes if they're in the response
+            enhanced_description = enhanced_description.strip('"\'')
+            
+            # Ensure the first letter is uppercase
+            if enhanced_description:
+                enhanced_description = enhanced_description[0].upper() + enhanced_description[1:]
+                
+            return enhanced_description
+        
+        return basic_description
+    except Exception as e:
+        print(f"Error in AI description enhancement: {e}")
+        return basic_description
+
+# Modify your generate_solutions_table function to use the AI enhancement
 def generate_solutions_table(solution_dirs):
     """Generate a table of solved problems with links."""
     table = "| Problem | Level | Solution | Description |\n|---------|-------|----------|-------------|\n"
@@ -141,7 +211,10 @@ def generate_solutions_table(solution_dirs):
     for num, directory, filename in solutions:
         # Get a more precise description
         file_path = os.path.join(directory, filename)
-        description = extract_description(file_path)
+        basic_description = extract_description(file_path)
+        
+        # Enhance with AI if API key is available
+        description = enhance_description_with_ai(file_path, basic_description)
         
         table += f"| [{num}](https://projecteuler.net/problem={num}) | {directory} | [{filename}]({directory}/{filename}) | {description} |\n"
     
