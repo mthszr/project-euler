@@ -118,9 +118,8 @@ def extract_description(file_path):
         default_desc = "Problem " + os.path.basename(file_path).replace('.cpp', '').replace('p', '')
         return default_desc[0].upper() + default_desc[1:] if default_desc else default_desc
 
-# Add this new function for AI-enhanced descriptions
+# Fix the API key validation and sanitization
 def enhance_description_with_ai(file_path, basic_description):
-    """Use OpenAI API to generate a more precise description based on code analysis."""
     try:
         # Read the file content
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
@@ -131,8 +130,15 @@ def enhance_description_with_ai(file_path, basic_description):
         if not api_key:
             print("⚠️ No OpenAI API key found. Falling back to basic description.")
             return basic_description
+        
+        # Sanitize API key (remove any whitespace or newlines)
+        api_key = api_key.strip()
+        
+        # Validate API key (basic check to ensure it's a non-empty string)
+        if not api_key or len(api_key) < 10:  # OpenAI keys are much longer than 10 chars
+            print("⚠️ Invalid API key format. Falling back to basic description.")
+            return basic_description
             
-        # Print confirmation that we have an API key (don't print the actual key!)
         print(f"🔑 API key found for file: {os.path.basename(file_path)}")
         
         headers = {
@@ -266,17 +272,6 @@ def update_readme():
     
     # Add solutions table table
     new_content += f"## Solutions\n\n{generate_solutions_table(solution_dirs)}\n"
-
-    # Write the updated content
-    with open("README.md", "w") as file:
-        file.write(new_content)
-    
-    if __name__ == "__main__":
-        update_readme()
-    
-    # Write the updated content
-    with open("README.md", "w") as file:
-        file.write(new_content)
 
 if __name__ == "__main__":
     update_readme()
