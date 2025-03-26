@@ -126,32 +126,32 @@ def enhance_description_with_ai(file_path, basic_description):
             code_content = file.read()
         
         # Prepare the API request
-        api_key = os.getenv('OPENAI_API_KEY')  # Set this in your environment variables or GitHub secrets
+        api_key = os.getenv('GROQ_API_KEY')  # Change to GROQ_API_KEY
         if not api_key:
-            print("⚠️ No OpenAI API key found. Falling back to basic description.")
+            print("⚠️ No Groq API key found. Falling back to basic description.")
             return basic_description
         
         # Sanitize API key (remove any whitespace or newlines)
         api_key = api_key.strip()
         
-        # Validate API key (basic check to ensure it's a non-empty string)
-        if not api_key or len(api_key) < 10:  # OpenAI keys are much longer than 10 chars
+        # Validate API key
+        if not api_key or len(api_key) < 10:
             print("⚠️ Invalid API key format. Falling back to basic description.")
             return basic_description
             
-        print(f"🔑 API key found for file: {os.path.basename(file_path)}")
+        print(f"🔑 Groq API key found for file: {os.path.basename(file_path)}")
         
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}'
         }
         
-        # Craft the prompt
+        # Craft the prompt (same as before)
         prompt = f"""
         This is a Project Euler solution code:
         
         ```
-        {code_content[:1000]}  # Limiting to first 1000 chars to avoid token limits
+        {code_content[:1000]}
         ```
         
         The current extracted description is: "{basic_description}"
@@ -161,8 +161,9 @@ def enhance_description_with_ai(file_path, basic_description):
         Just state what needs to be calculated/found directly.
         """
         
+        # Update the model to use Groq's model
         data = {
-            'model': 'gpt-3.5-turbo',
+            'model': 'llama3-8b-8192',  # Use Groq's model name
             'messages': [
                 {'role': 'system', 'content': 'You are a helpful assistant that generates concise descriptions of Project Euler problems.'},
                 {'role': 'user', 'content': prompt}
@@ -171,9 +172,9 @@ def enhance_description_with_ai(file_path, basic_description):
             'temperature': 0.3
         }
         
-        # Log API call attempt and response status
-        print(f"📤 Sending API request for problem: {os.path.basename(file_path)}")
-        response = requests.post('https://api.openai.com/v1/chat/completions', 
+        # Update the API endpoint URL
+        print(f"📤 Sending Groq API request for problem: {os.path.basename(file_path)}")
+        response = requests.post('https://api.groq.com/openai/v1/chat/completions',  # Change to Groq API endpoint
                                 headers=headers, 
                                 data=json.dumps(data),
                                 timeout=10)
