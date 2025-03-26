@@ -129,8 +129,12 @@ def enhance_description_with_ai(file_path, basic_description):
         # Prepare the API request
         api_key = os.getenv('OPENAI_API_KEY')  # Set this in your environment variables or GitHub secrets
         if not api_key:
+            print("⚠️ No OpenAI API key found. Falling back to basic description.")
             return basic_description
             
+        # Print confirmation that we have an API key (don't print the actual key!)
+        print(f"🔑 API key found for file: {os.path.basename(file_path)}")
+        
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}'
@@ -161,11 +165,14 @@ def enhance_description_with_ai(file_path, basic_description):
             'temperature': 0.3
         }
         
-        # Make the API call
+        # Log API call attempt and response status
+        print(f"📤 Sending API request for problem: {os.path.basename(file_path)}")
         response = requests.post('https://api.openai.com/v1/chat/completions', 
                                 headers=headers, 
                                 data=json.dumps(data),
                                 timeout=10)
+        
+        print(f"📥 API response status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
@@ -178,11 +185,14 @@ def enhance_description_with_ai(file_path, basic_description):
             if enhanced_description:
                 enhanced_description = enhanced_description[0].upper() + enhanced_description[1:]
                 
+            print(f"✅ Enhanced description generated for: {os.path.basename(file_path)}")
             return enhanced_description
+        else:
+            print(f"❌ API error: {response.text}")
         
         return basic_description
     except Exception as e:
-        print(f"Error in AI description enhancement: {e}")
+        print(f"❌ Error in AI description enhancement: {e}")
         return basic_description
 
 # Modify your generate_solutions_table function to use the AI enhancement
