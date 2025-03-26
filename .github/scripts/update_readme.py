@@ -242,26 +242,41 @@ def update_readme():
         # Create a new README if it doesn't exist
         content = "# Project Euler Solutions\n\nSolutions to Project Euler problems.\n\n"
     
-    # Update or add the count
-    count_pattern = r"Problems solved: \d+"
-    count_replacement = f"Problems solved: {count}"
-    
-    if re.search(count_pattern, content):
-        content = re.sub(count_pattern, count_replacement, content)
+    # Extract the header section (everything before ## Statistics if it exists)ion (everything before ## Statistics if it exists)
+    header_content = content
+    stats_match = re.search(r'(.*?)##\s*Statistics', content, re.DOTALL)
+    if stats_match:
+        header_content = stats_match.group(1)
     else:
-        content += f"\n## Statistics\n\n{count_replacement}\n"
+        # Check for other section headers if Statistics isn't found Check for other section headers if Statistics isn't found
+        for section in ["## Progress", "## Solutions"]:
+            section_match = re.search(r'(.*?)' + section, content, re.DOTALL)
+            if section_match:
+                header_content = section_match.group(1)
+                break
+    
+    # Create new content starting with the preserved headerstarting with the preserved header
+    new_content = header_content.rstrip() + "\n\n"
+    
+    # Add statistics section# Add statistics section
+    new_content += f"## Statistics\n\nProblems solved: **{count}**\n\n"
     
     # Add progress bar
-    progress_bar = create_progress_bar(count)
-    content += f"\n## Progress\n\n{progress_bar}\n"
+    new_content += f"## Progress\n\n{create_progress_bar(count)}\n\n"
     
-    # Add solutions table
-    solutions_table = generate_solutions_table(solution_dirs)
-    content += f"\n## Solutions\n\n{solutions_table}\n"
+    # Add solutions table table
+    new_content += f"## Solutions\n\n{generate_solutions_table(solution_dirs)}\n"
+
+    # Write the updated content
+    with open("README.md", "w") as file:
+        file.write(new_content)
+    
+    if __name__ == "__main__":
+        update_readme()
     
     # Write the updated content
     with open("README.md", "w") as file:
-        file.write(content)
+        file.write(new_content)
 
 if __name__ == "__main__":
     update_readme()
