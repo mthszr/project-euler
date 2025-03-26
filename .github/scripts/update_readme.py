@@ -56,7 +56,8 @@ def extract_description(file_path):
                         # Remove question mark at the end
                         desc = re.sub(r'\?$', '', desc.strip())
                         if len(desc) > 10:  # Ensure it's not empty or too short
-                            return desc[:100] + ('...' if len(desc) > 100 else '')
+                            desc = desc[:100] + ('...' if len(desc) > 100 else '')
+                            return desc[0].upper() + desc[1:] if desc else desc
             
             # Pattern 2: Look for multiline comments at the top
             in_comment = False
@@ -68,7 +69,8 @@ def extract_description(file_path):
                     # Single line /* */ comment
                     comment = line[line.find('/*')+2:line.find('*/')]
                     if len(comment.strip()) > 10:
-                        return comment.strip()[:100] + ('...' if len(comment.strip()) > 100 else '')
+                        comment = comment.strip()[:100] + ('...' if len(comment.strip()) > 100 else '')
+                        return comment[0].upper() + comment[1:] if comment else comment
                 elif '/*' in line:
                     in_comment = True
                     comment_lines.append(line[line.find('/*')+2:].strip())
@@ -77,7 +79,8 @@ def extract_description(file_path):
                     comment_lines.append(line[:line.find('*/')].strip())
                     full_comment = ' '.join(comment_lines)
                     if len(full_comment) > 10:
-                        return full_comment[:100] + ('...' if len(full_comment) > 100 else '')
+                        full_comment = full_comment[:100] + ('...' if len(full_comment) > 100 else '')
+                        return full_comment[0].upper() + full_comment[1:] if full_comment else full_comment
                 elif in_comment:
                     # Inside a multiline comment
                     clean_line = line.lstrip('* ').strip()
@@ -92,7 +95,8 @@ def extract_description(file_path):
                 if '//' in line:
                     description = line.strip().replace('//', '').strip()
                     if len(description) > 10:  # Ensure it's not empty or too short
-                        return description[:100] + ('...' if len(description) > 100 else '')
+                        description = description[:100] + ('...' if len(description) > 100 else '')
+                        return description[0].upper() + description[1:] if description else description
             
             # Pattern 4: Look for problem descriptions in problem statements or code
             problem_keywords = ['Find', 'Calculate', 'Determine', 'Compute', 'What is']
@@ -102,12 +106,15 @@ def extract_description(file_path):
                         # Extract potential problem description
                         desc = line.strip()
                         if len(desc) > 15:  # Ensure it's a substantial line
-                            return desc[:100] + ('...' if len(desc) > 100 else '')
+                            desc = desc[:100] + ('...' if len(desc) > 100 else '')
+                            return desc[0].upper() + desc[1:] if desc else desc
             
             # If no good description found
-            return "Problem " + os.path.basename(file_path).replace('.cpp', '').replace('p', '')
+            default_desc = "Problem " + os.path.basename(file_path).replace('.cpp', '').replace('p', '')
+            return default_desc[0].upper() + default_desc[1:] if default_desc else default_desc
     except:
-        return "Problem " + os.path.basename(file_path).replace('.cpp', '').replace('p', '')
+        default_desc = "Problem " + os.path.basename(file_path).replace('.cpp', '').replace('p', '')
+        return default_desc[0].upper() + default_desc[1:] if default_desc else default_desc
 
 def generate_solutions_table(solution_dirs):
     """Generate a table of solved problems with links."""
