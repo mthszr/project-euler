@@ -118,7 +118,7 @@ def extract_description(file_path):
         default_desc = "Problem " + os.path.basename(file_path).replace('.cpp', '').replace('p', '')
         return default_desc[0].upper() + default_desc[1:] if default_desc else default_desc
 
-# Fix the API key validation and sanitization
+# Update your enhance_description_with_ai function to use Gemini
 def enhance_description_with_ai(file_path, basic_description):
     try:
         # Read the file content
@@ -126,33 +126,18 @@ def enhance_description_with_ai(file_path, basic_description):
             code_content = file.read()
         
         # Prepare the API request
-        api_key = os.getenv('GROQ_API_KEY')  # Change to GROQ_API_KEY
+        api_key = os.getenv('GEMINI_API_KEY')  # Change to GEMINI_API_KEY
         if not api_key:
-            print("⚠️ No Groq API key found. Falling back to basic description.")
-            return basic_description
-        
-        # Sanitize API key (remove any whitespace or newlines)
-        api_key = api_key.strip()
-        
-        # Validate API key
-        if not api_key or len(api_key) < 10:
-            print("⚠️ Invalid API key format. Falling back to basic description.")
+            print("⚠️ No Gemini API key found. Falling back to basic description.")
             return basic_description
             
-        print(f"🔑 Groq API key found for file: {os.path.basename(file_path)}")
+        print(f"🔑 Gemini API key found for file: {os.path.basename(file_path)}")
         
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {api_key}'
-        }
-        
-        # Craft the prompt (same as before)
+        # The prompt to send to Gemini
         prompt = f"""
         This is a Project Euler solution code:
         
-        ```
         {code_content[:1000]}
-        ```
         
         The current extracted description is: "{basic_description}"
         
@@ -161,29 +146,35 @@ def enhance_description_with_ai(file_path, basic_description):
         Just state what needs to be calculated/found directly.
         """
         
-        # Update the model to use Groq's model
-        data = {
-            'model': 'llama3-8b-8192',  # Use Groq's model name
-            'messages': [
-                {'role': 'system', 'content': 'You are a helpful assistant that generates concise descriptions of Project Euler problems.'},
-                {'role': 'user', 'content': prompt}
-            ],
-            'max_tokens': 100,
-            'temperature': 0.3
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+        
+        headers = {
+            'Content-Type': 'application/json'
         }
         
-        # Update the API endpoint URL
-        print(f"📤 Sending Groq API request for problem: {os.path.basename(file_path)}")
-        response = requests.post('https://api.groq.com/openai/v1/chat/completions',  # Change to Groq API endpoint
-                                headers=headers, 
-                                data=json.dumps(data),
-                                timeout=10)
+        data = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt}
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": 100
+            }
+        }
+        
+        print(f"📤 Sending Gemini API request for problem: {os.path.basename(file_path)}")
+        response = requests.post(url, headers=headers, json=data, timeout=10)
         
         print(f"📥 API response status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
-            enhanced_description = result['choices'][0]['message']['content'].strip()
+            # Extract the text from Gemini's response format
+            enhanced_description = result['candidates'][0]['content']['parts'][0]['text'].strip()
             
             # Remove quotes if they're in the response
             enhanced_description = enhanced_description.strip('"\'')
@@ -249,30 +240,34 @@ def update_readme():
         # Create a new README if it doesn't exist
         content = "# Project Euler Solutions\n\nSolutions to Project Euler problems.\n\n"
     
-    # Extract the header section (everything before ## Statistics if it exists)ion (everything before ## Statistics if it exists)
+    # Extract the header section (everything before ## Statistics if it exists)
     header_content = content
     stats_match = re.search(r'(.*?)##\s*Statistics', content, re.DOTALL)
     if stats_match:
         header_content = stats_match.group(1)
     else:
-        # Check for other section headers if Statistics isn't found Check for other section headers if Statistics isn't found
+        # Check for other section headers if Statistics isn't found
         for section in ["## Progress", "## Solutions"]:
             section_match = re.search(r'(.*?)' + section, content, re.DOTALL)
             if section_match:
                 header_content = section_match.group(1)
                 break
     
-    # Create new content starting with the preserved headerstarting with the preserved header
+    # Create new content starting with the preserved header
     new_content = header_content.rstrip() + "\n\n"
     
-    # Add statistics section# Add statistics section
+    # Add statistics section
     new_content += f"## Statistics\n\nProblems solved: **{count}**\n\n"
     
     # Add progress bar
     new_content += f"## Progress\n\n{create_progress_bar(count)}\n\n"
     
-    # Add solutions table table
+    # Add solutions table
     new_content += f"## Solutions\n\n{generate_solutions_table(solution_dirs)}\n"
+    
+    # Write the updated content to the README file
+    with open("README.md", "w") as file:
+        file.write(new_content)
 
 if __name__ == "__main__":
     update_readme()
