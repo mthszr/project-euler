@@ -2,9 +2,6 @@ name: Update README
 
 on:
   push:
-    paths:
-      - 'level*/**'
-      - 'bonus/**'
   workflow_dispatch:
 
 jobs:
